@@ -6,8 +6,8 @@ import (
 	"git.resultys.com.br/lib/lower/collection/queue"
 	"git.resultys.com.br/lib/lower/promise"
 	"git.resultys.com.br/lib/lower/time"
-	"git.resultys.com.br/prospecta/orchestrator/compute"
-	"git.resultys.com.br/prospecta/orchestrator/manager"
+	"git.resultys.com.br/motor/orchestrator/compute"
+	"git.resultys.com.br/motor/orchestrator/manager"
 )
 
 type item struct {

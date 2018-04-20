@@ -3,7 +3,7 @@ package manager
 import (
 	"sync"
 
-	"git.resultys.com.br/prospecta/orchestrator/compute"
+	"git.resultys.com.br/motor/orchestrator/compute"
 )
 
 // Manager struct
@@ -17,8 +17,7 @@ type Manager struct {
 // New cria estrutura
 func New() *Manager {
 	manager := &Manager{
-		instances: make([]*compute.Instance, 0),
-		mutex:     &sync.Mutex{},
+		mutex: &sync.Mutex{},
 	}
 
 	return manager

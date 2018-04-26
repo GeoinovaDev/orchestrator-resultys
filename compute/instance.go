@@ -10,6 +10,7 @@ const (
 
 // Instance struct
 type Instance struct {
-	IP     string
-	Status int
+	IP      string
+	Status  int
+	Running int
 }

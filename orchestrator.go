@@ -1,8 +1,6 @@
 package orchestrator
 
 import (
-	"sync"
-
 	"git.resultys.com.br/lib/lower/collection/queue"
 	"git.resultys.com.br/lib/lower/promise"
 	"git.resultys.com.br/lib/lower/time"
@@ -22,29 +20,41 @@ func (it item) GetID() int {
 // Orchestrator struct
 type Orchestrator struct {
 	parallel     int
-	totalRunning int
 	manager      *manager.Manager
 	fila         *queue.Queue
-	mutex        *sync.Mutex
+	timeoutBlock int
 }
 
 // New cria orchestrator
 func New() *Orchestrator {
 	o := &Orchestrator{}
 
+	o.timeoutBlock = 20 * 60
 	o.fila = queue.New()
-	o.mutex = &sync.Mutex{}
-
 	o.manager = manager.New()
-	o.manager.OnRelease(o.processFila)
 
 	return o
 }
 
-// Parallel informa quantidade de instancias que serao executadas em paralelo
+// TimeoutBlock seta o tempo de tempo que instancia permanece bloqueada
+func (o *Orchestrator) TimeoutBlock(segundos int) *Orchestrator {
+	o.timeoutBlock = segundos
+
+	return o
+}
+
+// ParallelInstance informa quantidade de instancias que poderao ser alocadas em paralelo
 // Valor de 0 indica que não haverá sequenciamento das chamadas
-func (o *Orchestrator) Parallel(parallel int) *Orchestrator {
+func (o *Orchestrator) ParallelInstance(parallel int) *Orchestrator {
 	o.parallel = parallel
+
+	return o
+}
+
+// ParallelRequest informa quantidade de requests que serao executadas em paralelo
+// Valor de 0 indica que não haverá sequenciamento das chamadas
+func (o *Orchestrator) ParallelRequest(parallel int) *Orchestrator {
+	o.manager.Parallel(parallel)
 
 	return o
 }
@@ -67,8 +77,8 @@ func (o *Orchestrator) GetInstance(callback func(*compute.Instance)) *Orchestrat
 func (o *Orchestrator) BlockInstance(instance *compute.Instance) *Orchestrator {
 	o.manager.BlockInstance(instance)
 
-	time.Timeout(60, func() {
-		o.manager.ReleaseInstance(instance)
+	time.Timeout(o.timeoutBlock, func() {
+		o.manager.UnBlockInstance(instance)
 	})
 
 	return o
@@ -76,58 +86,48 @@ func (o *Orchestrator) BlockInstance(instance *compute.Instance) *Orchestrator {
 
 // AllocInstance aloca instancia para execução de uma tarefa
 func (o *Orchestrator) AllocInstance(callback func(*compute.Instance)) *promise.Promise {
+	var instance *compute.Instance
 	promise := &promise.Promise{}
 
-	o.mutex.Lock()
+	o.manager.Lock()
 
 	if o.manager.IsBlockedInstances() {
 		promise.Reject("todas as instancias estão bloqueadas")
-		o.mutex.Unlock()
+		o.manager.Unlock()
 		return promise
 	}
 
 	if o.isFull() {
-		o.fila.Push(item{callback: callback})
-		o.mutex.Unlock()
-		return promise
+		instance = o.manager.GetInstance(compute.RUNNING)
+	} else {
+		instance = o.manager.GetInstance(compute.READY)
 	}
-
-	instance := o.manager.GetInstance()
 
 	if instance == nil {
 		o.fila.Push(item{callback: callback})
-		o.mutex.Unlock()
+		o.manager.Unlock()
 		return promise
 	}
 
-	o.incRunning()
-	o.mutex.Unlock()
+	o.manager.AllocInstance(instance)
+	o.manager.Unlock()
 
 	callback(instance)
 
-	o.mutex.Lock()
-	o.decRunning()
-	o.mutex.Unlock()
-	if instance.Status == compute.RUNNING {
-		o.manager.ReleaseInstance(instance)
-	}
+	o.manager.Lock()
+	o.manager.ReleaseInstance(instance)
+	o.manager.Unlock()
+
+	o.processFila()
 
 	return promise
 }
 
 func (o *Orchestrator) isFull() bool {
-	return o.totalRunning == o.parallel
+	return o.parallel == o.manager.TotalInstance(compute.RUNNING)
 }
 
-func (o *Orchestrator) incRunning() {
-	o.totalRunning++
-}
-
-func (o *Orchestrator) decRunning() {
-	o.totalRunning--
-}
-
-func (o *Orchestrator) processFila(instance *compute.Instance) {
+func (o *Orchestrator) processFila() {
 	if o.fila.IsEmpty() {
 		return
 	}

@@ -87,7 +87,7 @@ func (o *Orchestrator) BlockInstance(instance *compute.Instance) *Orchestrator {
 // AllocInstance aloca instancia para execução de uma tarefa
 func (o *Orchestrator) AllocInstance(callback func(*compute.Instance)) *promise.Promise {
 	var instance *compute.Instance
-	promise := &promise.Promise{}
+	promise := promise.New()
 
 	o.manager.Lock()
 

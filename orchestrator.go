@@ -128,10 +128,11 @@ func (o *Orchestrator) isFull() bool {
 }
 
 func (o *Orchestrator) processFila() {
-	if o.fila.IsEmpty() {
+	it := o.fila.Pop()
+	if it == nil {
 		return
 	}
 
-	item := o.fila.Pop().(item)
+	item := it.(item)
 	o.AllocInstance(item.callback)
 }

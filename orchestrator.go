@@ -3,7 +3,7 @@ package orchestrator
 import (
 	"git.resultys.com.br/lib/lower/collection/queue"
 	"git.resultys.com.br/lib/lower/promise"
-	"git.resultys.com.br/lib/lower/time"
+	"git.resultys.com.br/lib/lower/time/interval"
 	"git.resultys.com.br/motor/orchestrator/compute"
 	"git.resultys.com.br/motor/orchestrator/manager"
 )
@@ -77,7 +77,7 @@ func (o *Orchestrator) GetInstance(callback func(*compute.Instance)) *Orchestrat
 func (o *Orchestrator) BlockInstance(instance *compute.Instance) *Orchestrator {
 	o.manager.BlockInstance(instance)
 
-	time.Timeout(o.timeoutBlock, func() {
+	interval.New().Timeout(o.timeoutBlock, func() {
 		o.manager.UnBlockInstance(instance)
 	})
 

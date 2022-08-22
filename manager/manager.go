@@ -3,7 +3,7 @@ package manager
 import (
 	"sync"
 
-	"git.resultys.com.br/motor/orchestrator/compute"
+	"github.com/GeoinovaDev/orchestrator-resultys/compute"
 )
 
 // Manager struct

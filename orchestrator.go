@@ -1,11 +1,11 @@
 package orchestrator
 
 import (
-	"git.resultys.com.br/lib/lower/collection/queue"
-	"git.resultys.com.br/lib/lower/promise"
-	"git.resultys.com.br/lib/lower/time/interval"
-	"git.resultys.com.br/motor/orchestrator/compute"
-	"git.resultys.com.br/motor/orchestrator/manager"
+	"github.com/GeoinovaDev/lower-resultys/collection/queue"
+	"github.com/GeoinovaDev/lower-resultys/promise"
+	"github.com/GeoinovaDev/lower-resultys/time/interval"
+	"github.com/GeoinovaDev/orchestrator-resultys/compute"
+	"github.com/GeoinovaDev/orchestrator-resultys/manager"
 )
 
 type item struct {
